@@ -81,13 +81,13 @@ in
         ] ++ lib.optional config.services.k3s.enable "k3s.service";
         wants = after;
 
+        environment = defaultEnvs // cfg.environment;
         serviceConfig = {
           Type = "simple";
           Restart = "on-failure";
 
           StateDirectory = name;
           WorkingDirectory = "%S/${name}";
-          Environment = defaultEnvs // cfg.environment;
 
           ExecStart = lib.getExe cfg.package;
         };
