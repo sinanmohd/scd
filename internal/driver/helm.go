@@ -103,7 +103,7 @@ func HelmChartUpstallIfChagedWrapped(gitChartPath string, bg *git.Git, wg *sync.
 	go func() {
 		err := HelmChartUpstallIfChaged(gitChartPath, bg)
 		if err != nil {
-			log.Fatal().Err(err).Msgf("Upstalling Helm Chart %s", filepath.Base(gitChartPath))
+			log.Error().Err(err).Msgf("Upstalling Helm Chart %s", filepath.Base(gitChartPath))
 		}
 
 		wg.Done()
