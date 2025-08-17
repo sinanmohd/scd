@@ -33,6 +33,11 @@ in
       type = lib.types.attrsOf lib.types.str;
     };
 
+    path = lib.mkOption {
+      default = [ ];
+      type = lib.types.listOf lib.types.package;
+    };
+
     settings = lib.mkOption {
       inherit (configFormat) type;
       default = { };
@@ -57,41 +62,42 @@ in
       };
     };
 
+    systemd =
+      let
+        name = "scid";
+        meta.description = "Your frenly neighbourhood CI/CD.";
+      in
+      {
+        timers.${name} = meta // {
+          wantedBy = [ "timers.target" ];
 
-  systemd =
-    let
-      name = "scid";
-      meta.description = "Your frenly neighbourhood CI/CD.";
-    in
-    {
-      timers.${name} = meta // {
-        wantedBy = [ "timers.target" ];
+          timerConfig = {
+            OnCalendar = "*:0/1";
+            Persistent = true;
+          };
+        };
 
-        timerConfig = {
-          OnCalendar = "*:0/1";
-          Persistent = true;
+        services.${name} = meta // rec {
+          description = "";
+          wantedBy = [ "multi-user.target" ];
+          after = [
+            "network-online.target"
+          ]
+          ++ lib.optional config.services.k3s.enable "k3s.service";
+          wants = after;
+          path = cfg.path;
+
+          environment = defaultEnvs // cfg.environment;
+          serviceConfig = {
+            Type = "simple";
+            Restart = "on-failure";
+
+            StateDirectory = name;
+            WorkingDirectory = "%S/${name}";
+
+            ExecStart = lib.getExe cfg.package;
+          };
         };
       };
-
-      services.${name} = meta // rec {
-        description = "";
-        wantedBy = [ "multi-user.target" ];
-        after = [
-          "network-online.target"
-        ] ++ lib.optional config.services.k3s.enable "k3s.service";
-        wants = after;
-
-        environment = defaultEnvs // cfg.environment;
-        serviceConfig = {
-          Type = "simple";
-          Restart = "on-failure";
-
-          StateDirectory = name;
-          WorkingDirectory = "%S/${name}";
-
-          ExecStart = lib.getExe cfg.package;
-        };
-      };
-    };
   };
 }
