@@ -94,6 +94,8 @@ func New(repoUrl, branchName string) (*Git, error) {
 func (bg *Git) HeadMoved() bool {
 	if config.Config.DryRun {
 		return true
+	} else if bg.OldHash == nil {
+		return  true
 	}
 
 	return *bg.NewHash != *bg.OldHash

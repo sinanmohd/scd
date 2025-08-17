@@ -3,7 +3,6 @@ package config
 // TODO: release this as seperate go package
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"reflect"
