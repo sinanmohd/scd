@@ -15,7 +15,7 @@ func ExecIfChaged(paths, execLine []string, bg *git.Git) (string, string, error 
 		return "", "", nil, err
 	}
 	if changed == "" {
-		return "", changed, nil, err
+		return "", "", nil, nil
 	}
 
 	log.Info().Msgf("Execing %v", execLine)

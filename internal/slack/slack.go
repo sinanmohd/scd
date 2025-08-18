@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/rs/zerolog/log"
 	"sinanmohd.com/scid/internal/config"
 	"sinanmohd.com/scid/internal/git"
 )
@@ -37,6 +38,7 @@ func SendMesg(g *git.Git, color, title string, success bool, extraText string) e
 		return nil
 	}
 
+	slackTitle := fmt.Sprintf("%s Update", title)
 	var text string
 	if success {
 		text = fmt.Sprintf("Successfully updated %s\n%s", title, extraText)
@@ -44,12 +46,13 @@ func SendMesg(g *git.Git, color, title string, success bool, extraText string) e
 		color = "#FF0000"
 		text = fmt.Sprintf("Failed to update %s\n%s", title, extraText)
 	}
+	log.Info().Msgf("Sending Slack Message: %s", slackTitle)
 
 	data := Payload{
 		Channel: config.Config.Slack.Channel,
 		Attachments: []Attachment{{
 			Color:      color,
-			Title:      fmt.Sprintf("%s Update", title),
+			Title:      slackTitle,
 			Text:       text,
 			Footer:     "https://github.com/sinanmohd/scid",
 			FooterIcon: "https://avatars.githubusercontent.com/u/69694713?v=4&s=75",
