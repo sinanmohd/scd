@@ -14,11 +14,13 @@ func ExecIfChaged(paths, execLine []string, bg *git.Git) (string, string, error 
 	if err != nil {
 		return "", "", nil, err
 	}
-	if changed == "" {
-		return "", "", nil, nil
-	}
 
-	log.Info().Msgf("Execing %v", execLine)
+	if changed == "" {
+		log.Info().Msgf("Skipping %v, because 0 watch paths changed", execLine)
+		return "", "", nil, nil
+	} else {
+		log.Info().Msgf("Execing %v, because watch path %s changed", execLine, changed)
+	}
 
 	if config.Config.DryRun {
 		return "", changed, nil, err
