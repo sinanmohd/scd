@@ -95,51 +95,53 @@ func (bg *Git) HeadMoved() bool {
 	if config.Config.DryRun {
 		return true
 	} else if bg.OldHash == nil {
-		return  true
+		return true
 	}
 
 	return *bg.NewHash != *bg.OldHash
 }
 
-func (bg *Git) PathsUpdated(prefixPaths []string) (bool, error) {
+func (bg *Git) PathsUpdated(prefixPaths []string) (string, error) {
 	if config.Config.DryRun {
-		return true, nil
+		return "/", nil
 	}
 
 	if bg.OldHash == nil {
-		return true, nil
+		return "/", nil
 	}
 
 	coOld, err := bg.repo.CommitObject(*bg.OldHash)
 	if err != nil {
-		return false, err
+		return "", err
 	}
 	treeOld, err := coOld.Tree()
 	if err != nil {
-		return false, err
+		return "", err
 	}
 
 	coNew, err := bg.repo.CommitObject(*bg.NewHash)
 	if err != nil {
-		return false, err
+		return "", err
 	}
 	treeNew, err := coNew.Tree()
 	if err != nil {
-		return false, err
+		return "", err
 	}
 
 	changes, err := treeOld.Diff(treeNew)
 	if err != nil {
-		return false, err
+		return "", err
 	}
 
 	for _, change := range changes {
 		for _, path := range prefixPaths {
-			if strings.HasPrefix(change.From.Name, path) || strings.HasPrefix(change.To.Name, path) {
-				return true, nil
+			if strings.HasPrefix(change.From.Name, path) {
+				return change.From.Name, nil
+			} else if strings.HasPrefix(change.To.Name, path) {
+				return change.To.Name, nil
 			}
 		}
 	}
 
-	return false, nil
+	return "", nil
 }

@@ -12,7 +12,7 @@ import (
 )
 
 func JobRunIfChaged(job config.JobConfig, g *git.Git) error {
-	output, execErr, err := ExecIfChaged(job.WatchPaths, job.ExecLine, g)
+	output, changedPath, execErr, err := ExecIfChaged(job.WatchPaths, job.ExecLine, g)
 	if err != nil {
 		return err
 	}
@@ -25,9 +25,11 @@ func JobRunIfChaged(job config.JobConfig, g *git.Git) error {
 	}
 
 	if execErr != nil {
-		err = slack.SendMesg(g, color, job.Name, false, fmt.Sprintf("%s: %s", execErr.Error(), output))
+		extraText := fmt.Sprintf("watch path %s changed\n%s: %s", changedPath, execErr.Error(), output)
+		err = slack.SendMesg(g, color, job.Name, false, extraText)
 	} else {
-		err = slack.SendMesg(g, color, job.Name, true, "")
+		extraText := fmt.Sprintf("watch path %s changed\n%s", changedPath, output)
+		err = slack.SendMesg(g, color, job.Name, true, extraText)
 	}
 	if err != nil {
 		return err

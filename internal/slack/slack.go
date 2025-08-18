@@ -33,7 +33,7 @@ type Field struct {
 }
 
 func SendMesg(g *git.Git, color, title string, success bool, extraText string) error {
-	if config.Config.Slack == nil || config.Config.DryRun {
+	if config.Config.Slack == nil {
 		return nil
 	}
 
