@@ -87,6 +87,10 @@ in
           wants = after;
           path = cfg.path;
 
+          # since it's a ci/cd, it itself might be updating itself
+          # so if we try to restart it, it would exit prematurely
+          restartIfChanged = false;
+
           environment = defaultEnvs // cfg.environment;
           serviceConfig = {
             Type = "simple";
