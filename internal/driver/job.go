@@ -15,6 +15,8 @@ func JobRunIfChaged(job config.JobConfig, g *git.Git) error {
 	output, changedPath, execErr, err := ExecIfChaged(job.WatchPaths, job.ExecLine, g)
 	if err != nil {
 		return err
+	} else if changedPath == "" {
+		return nil
 	}
 
 	var color string

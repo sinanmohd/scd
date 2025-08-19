@@ -88,6 +88,12 @@ func HelmChartUpstallIfChaged(gitChartPath string, bg *git.Git) error {
 	}
 
 	output, changedPath, execErr, err := ExecIfChaged(changeWatchPaths, execLine, bg)
+	if err != nil {
+		return err
+	} else if changedPath == "" {
+		return nil
+	}
+
 	title := fmt.Sprintf("Helm Chart %s", filepath.Base(gitChartPath))
 	if execErr != nil {
 		extraText := fmt.Sprintf("watch path %s changed\n%s: %s", changedPath, execErr.Error(), output)
@@ -95,9 +101,6 @@ func HelmChartUpstallIfChaged(gitChartPath string, bg *git.Git) error {
 	} else {
 		extraText := fmt.Sprintf("watch path %s changed\n%s", changedPath, output)
 		err = slack.SendMesg(bg, "#10148c", title, true, extraText)
-	}
-	if err != nil {
-		return err
 	}
 
 	return nil
