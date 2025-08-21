@@ -16,6 +16,7 @@ type Git struct {
 	LocalPath        string
 	repo             *git.Repository
 	NewHash, OldHash *plumbing.Hash
+	changedPaths     []string
 	// https://github.com/go-git/go-git/issues/773
 	mu sync.Mutex
 }
@@ -86,66 +87,74 @@ func New(repoUrl, branchName string) (*Git, error) {
 	}
 	newHash := headRef.Hash()
 
-	return &Git{
+	g := Git{
 		LocalPath: localPath,
 		repo:      repo,
 		NewHash:   &newHash,
 		OldHash:   &oldHash,
-	}, nil
-}
-
-func (bg *Git) HeadMoved() bool {
-	if config.Config.DryRun {
-		return true
-	} else if bg.OldHash == nil {
-		return true
 	}
-
-	return *bg.NewHash != *bg.OldHash
-}
-
-func (bg *Git) PathsUpdated(prefixPaths []string) (string, error) {
-	bg.mu.Lock()
-	defer bg.mu.Unlock()
-
-	if config.Config.DryRun {
-		return "/", nil
-	} else if bg.OldHash == nil {
-		return "/", nil
-	}
-
-	coOld, err := bg.repo.CommitObject(*bg.OldHash)
+	err = g.changedPathsSet()
 	if err != nil {
-		return "", err
+		return nil, err
+	}
+
+	return &g, nil
+}
+
+func (g *Git) changedPathsSet() error {
+	coOld, err := g.repo.CommitObject(*g.OldHash)
+	if err != nil {
+		return err
 	}
 	treeOld, err := coOld.Tree()
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	coNew, err := bg.repo.CommitObject(*bg.NewHash)
+	coNew, err := g.repo.CommitObject(*g.NewHash)
 	if err != nil {
-		return "", err
+		return err
 	}
 	treeNew, err := coNew.Tree()
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	changes, err := treeOld.Diff(treeNew)
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	for _, change := range changes {
-		for _, path := range prefixPaths {
-			if strings.HasPrefix(change.From.Name, path) {
-				return change.From.Name, nil
-			} else if strings.HasPrefix(change.To.Name, path) {
-				return change.To.Name, nil
+		if change.From.Name != "" {
+			g.changedPaths = append(g.changedPaths, change.From.Name)
+		}
+		if change.To.Name != "" {
+			g.changedPaths = append(g.changedPaths, change.To.Name)
+		}
+	}
+
+	return err
+}
+
+func (g *Git) HeadMoved() bool {
+	if config.Config.DryRun {
+		return true
+	} else if g.OldHash == nil {
+		return true
+	}
+
+	return *g.NewHash != *g.OldHash
+}
+
+func (g *Git) ArePathsChanged(prefixPaths []string) string {
+	for _, changedPath := range g.changedPaths {
+		for _, prefixPath := range prefixPaths {
+			if strings.HasPrefix(changedPath, prefixPath) {
+				return changedPath
 			}
 		}
 	}
 
-	return "", nil
+	return ""
 }

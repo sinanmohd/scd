@@ -9,12 +9,8 @@ import (
 	"sinanmohd.com/scid/internal/git"
 )
 
-func ExecIfChaged(paths, execLine []string, bg *git.Git) (string, string, error /* exec error */, error) {
-	changed, err := bg.PathsUpdated(paths)
-	if err != nil {
-		return "", "", nil, err
-	}
-
+func ExecIfChaged(paths, execLine []string, g *git.Git) (string, string, error /* exec error */, error) {
+	changed := g.ArePathsChanged(paths)
 	if changed == "" {
 		log.Info().Msgf("Skipping %v, because 0 watch paths changed", execLine)
 		return "", "", nil, nil
@@ -23,7 +19,7 @@ func ExecIfChaged(paths, execLine []string, bg *git.Git) (string, string, error 
 	}
 
 	if config.Config.DryRun {
-		return "", changed, nil, err
+		return "", changed, nil, nil
 	}
 
 	output, err := exec.Command(execLine[0], execLine[1:]...).CombinedOutput()
