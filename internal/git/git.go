@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/go-git/go-git/v6"
 	"github.com/go-git/go-git/v6/plumbing"
@@ -15,6 +16,8 @@ type Git struct {
 	LocalPath        string
 	repo             *git.Repository
 	NewHash, OldHash *plumbing.Hash
+	// https://github.com/go-git/go-git/issues/773
+	mu sync.Mutex
 }
 
 func New(repoUrl, branchName string) (*Git, error) {
@@ -102,11 +105,12 @@ func (bg *Git) HeadMoved() bool {
 }
 
 func (bg *Git) PathsUpdated(prefixPaths []string) (string, error) {
+	bg.mu.Lock()
+	defer bg.mu.Unlock()
+
 	if config.Config.DryRun {
 		return "/", nil
-	}
-
-	if bg.OldHash == nil {
+	} else if bg.OldHash == nil {
 		return "/", nil
 	}
 
