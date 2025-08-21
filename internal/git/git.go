@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"sync"
 
 	"github.com/go-git/go-git/v6"
 	"github.com/go-git/go-git/v6/plumbing"
@@ -17,8 +16,6 @@ type Git struct {
 	repo             *git.Repository
 	NewHash, OldHash *plumbing.Hash
 	changedPaths     []string
-	// https://github.com/go-git/go-git/issues/773
-	mu sync.Mutex
 }
 
 func New(repoUrl, branchName string) (*Git, error) {
@@ -101,6 +98,10 @@ func New(repoUrl, branchName string) (*Git, error) {
 	return &g, nil
 }
 
+// go-git has concurrency issues: https://github.com/go-git/go-git/issues/773
+// doing this concurrently with coroutines can cause "zlib: invalid header" error
+// so it would require a mutex and bottleneck concurrency
+// also in-memory should be faster than reading it from disk every time
 func (g *Git) changedPathsSet() error {
 	coOld, err := g.repo.CommitObject(*g.OldHash)
 	if err != nil {
